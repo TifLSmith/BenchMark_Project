@@ -1,0 +1,31 @@
+# CIS AWS Foundations Benchmark v7.0 — Control 6.1.1
+# Ensure EBS volume encryption is enabled in all regions
+# Level: 1 | Automated
+
+package aws.cis.v7.networking.ebs_encryption
+
+import future.keywords.if
+import future.keywords.in
+
+default allow := false
+
+allow if {
+    count(unencrypted_regions) == 0
+}
+
+unencrypted_regions[region] {
+    entry := input.ebs_encryption_settings[_]
+    entry.EbsEncryptionByDefault == false
+    region := entry.region
+}
+
+violation[msg] {
+    region := unencrypted_regions[_]
+    msg := sprintf(
+        "CIS 6.1.1 FAIL: EBS encryption NOT enabled in region '%s'. Run: aws --region %s ec2 enable-ebs-encryption-by-default",
+        [region, region]
+    )
+}
+
+result := "PASS" if allow
+result := "FAIL" if not allow
